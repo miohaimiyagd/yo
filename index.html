@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YO.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#2b3fe0;--ink:#14143a;--yellow:#ffd93b;--paper:#fff;--mist:#dce0ff;--red:#b3122a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--blue);color:var(--ink);font:400 1rem/1.5 "Bricolage Grotesque",system-ui,sans-serif}
+header,main{max-width:1000px;margin:0 auto;padding:0 1.25rem}
+header{padding-top:2.5rem}
+.logo{margin:0;font-weight:800;font-size:clamp(5.5rem,24vw,12rem);line-height:.8;letter-spacing:-.06em;color:var(--yellow)}
+.tabs{display:flex;gap:.6rem;margin:1.75rem 0 1.5rem}
+.tabs button{font:600 1.1rem "Bricolage Grotesque",system-ui,sans-serif;padding:.55rem 1.3rem;border-radius:99px;border:2px solid #fff;background:transparent;color:#fff;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1.25rem;padding-bottom:4rem}
+.card{display:block;text-align:left;font:inherit;color:var(--ink);background:var(--paper);border:0;border-radius:6px;padding:.7rem .7rem 1rem;cursor:pointer;box-shadow:6px 6px 0 var(--ink);transition:transform .12s,box-shadow .12s}
+.card:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+.art{aspect-ratio:1;display:grid;place-items:center;text-align:center;margin-bottom:.7rem;background:repeating-linear-gradient(135deg,var(--mist) 0 12px,#fff 12px 24px);font-size:.95rem;color:#5a5f9c}
+.art img{width:100%;height:100%;object-fit:cover}
+.card span{font-weight:600;font-size:1.1rem}
+dialog{width:min(520px,calc(100% - 1.5rem));max-height:calc(100% - 1.5rem);border:0;border-radius:8px;padding:0;color:var(--ink);box-shadow:8px 8px 0 var(--ink)}
+dialog::backdrop{background:rgba(20,20,58,.7)}
+.sheet{padding:1.4rem}
+.sheet h2{margin:0 0 .2rem;font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
+.sheet p{margin:0 0 1rem}
+.close{position:absolute;top:.6rem;right:.8rem;border:0;background:none;font-size:1.8rem;line-height:1;cursor:pointer;color:var(--ink)}
+label{display:block;font-weight:600;margin:.8rem 0 .25rem}
+input,textarea{width:100%;font:inherit;padding:.6rem .7rem;border:2px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink)}
+textarea{min-height:120px;resize:vertical}
+.hint{font-size:.9rem;color:#4b4f7c;font-weight:400}
+.pick{display:inline-block;margin-top:.3rem;padding:.45rem .9rem;border:2px dashed var(--ink);border-radius:6px;cursor:pointer;font-weight:600}
+.pick:has(input:focus-visible){outline:3px solid var(--blue)}
+.pick input{position:absolute;opacity:0;width:1px;height:1px}
+#thumbs{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+#thumbs div{position:relative}
+#thumbs img{width:64px;height:64px;object-fit:cover;border-radius:4px;display:block}
+#thumbs button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:#fff;cursor:pointer;line-height:1}
+.send{margin-top:1.2rem;width:100%;font:800 1.15rem "Bricolage Grotesque",system-ui,sans-serif;padding:.8rem;border:0;border-radius:6px;background:var(--blue);color:#fff;cursor:pointer}
+.send:disabled{opacity:.6;cursor:wait}
+#status{min-height:1.5rem;margin:.6rem 0 0;color:var(--red);font-weight:600}
+.hp{position:absolute;left:-9999px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.card{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1 class="logo">YO.</h1>
+  <div class="tabs" id="tabs" role="tablist"></div>
+</header>
+<main><div class="grid" id="grid"></div></main>
+
+<dialog id="dlg" aria-labelledby="itemName">
+  <div class="sheet">
+    <button class="close" type="button" aria-label="Close" onclick="dlg.close()">×</button>
+    <form id="form">
+      <h2 id="itemName"></h2>
+      <p>Commission request</p>
+      <label for="who">Your name</label>
+      <input id="who" required maxlength="100" autocomplete="name">
+      <label for="mail">Your email</label>
+      <input id="mail" type="email" required maxlength="200" autocomplete="email">
+      <label for="text">What should be drawn?</label>
+      <textarea id="text" required maxlength="5000"></textarea>
+      <label>Reference images <span class="hint">(optional)</span></label>
+      <label class="pick">Add images<input id="pick" type="file" accept="image/*" multiple></label>
+      <span class="hint" id="count"></span>
+      <div id="thumbs"></div>
+      <input id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button class="send" id="send" type="submit">Send request</button>
+      <p id="status" role="status"></p>
+    </form>
+    <div id="done" hidden>
+      <h2>Request sent!</h2>
+      <p>Yohan will email you with pricing.</p>
+      <button class="send" type="button" onclick="dlg.close()">Close</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* ===== EDIT THESE ===== */
+const SCRIPT_URL = "PASTE_YOUR_WEB_APP_URL_HERE";   // from the Google Apps Script setup
+
+const TABS = [
+  { id: "yodraw", label: "YoDraw" },
+  { id: "yocard", label: "YoCard" }
+];
+
+// Add items here. "image" is optional, e.g. "images/cat.png" (upload the file to an images folder in GitHub).
+const ITEMS = {
+  yodraw: [{ name: "Placeholder drawing", image: "" }],
+  yocard: [{ name: "Placeholder card",    image: "" }]
+};
+/* ====================== */
+
+const $ = s => document.querySelector(s);
+const dlg = $("#dlg");
+let tab = TABS[0].id, item = null, files = [];
+
+function drawTabs() {
+  const box = $("#tabs"); box.innerHTML = "";
+  TABS.forEach(t => {
+    const b = document.createElement("button");
+    b.textContent = t.label;
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", t.id === tab);
+    b.onclick = () => { tab = t.id; drawTabs(); drawGrid(); };
+    box.append(b);
+  });
+}
+
+function drawGrid() {
+  const g = $("#grid"); g.innerHTML = "";
+  (ITEMS[tab] || []).forEach(it => {
+    const b = document.createElement("button");
+    b.className = "card";
+    const art = document.createElement("div");
+    art.className = "art";
+    if (it.image) { const im = document.createElement("img"); im.src = it.image; im.alt = it.name; art.append(im); }
+    else art.textContent = "Drawing coming soon";
+    const n = document.createElement("span"); n.textContent = it.name;
+    b.append(art, n);
+    b.onclick = () => openForm(it);
+    g.append(b);
+  });
+}
+
+function say(msg) { $("#status").textContent = msg || ""; }
+
+function openForm(it) {
+  item = it; files = [];
+  $("#itemName").textContent = it.name;
+  $("#form").reset(); $("#form").hidden = false; $("#done").hidden = true;
+  $("#send").disabled = false; say(""); drawThumbs();
+  dlg.showModal();
+}
+
+function drawThumbs() {
+  const t = $("#thumbs"); t.innerHTML = "";
+  files.forEach((f, i) => {
+    const w = document.createElement("div"), im = document.createElement("img"), x = document.createElement("button");
+    im.src = URL.createObjectURL(f); im.alt = "";
+    x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Remove image");
+    x.onclick = () => { files.splice(i, 1); drawThumbs(); };
+    w.append(im, x); t.append(w);
+  });
+  $("#count").textContent = files.length + " of 5 images";
+}
+
+$("#pick").onchange = e => {
+  const add = [...e.target.files].filter(f => f.type.startsWith("image/"));
+  const room = 5 - files.length;
+  files = files.concat(add.slice(0, room));
+  say(add.length > room ? "Only 5 images fit, so the extras were skipped." : "");
+  e.target.value = ""; drawThumbs();
+};
+
+// Shrinks each photo so the email stays small and sends fast.
+function shrink(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const s = Math.min(1, 1400 / Math.max(im.width, im.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(im.width * s); c.height = Math.round(im.height * s);
+      c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res({ data: c.toDataURL("image/jpeg", .82).split(",")[1] });
+    };
+    im.onerror = () => rej(new Error("Couldn’t read one of the images."));
+    im.src = url;
+  });
+}
+
+$("#form").onsubmit = async e => {
+  e.preventDefault();
+  if ($("#hp").value) return;
+  if (SCRIPT_URL.startsWith("PASTE")) { say("Email isn’t connected yet. Add your web app URL in index.html."); return; }
+  $("#send").disabled = true; say("");
+  $("#send").textContent = "Sending…";
+  try {
+    const images = await Promise.all(files.map(shrink));
+    const r = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ name: $("#who").value.trim(), email: $("#mail").value.trim(), text: $("#text").value.trim(), item: item.name, images })
+    });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error);
+    $("#form").hidden = true; $("#done").hidden = false;
+  } catch (err) {
+    say("Your request didn’t send. Check your connection and try again.");
+    $("#send").disabled = false;
+  }
+  $("#send").textContent = "Send request";
+};
+
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+drawTabs(); drawGrid();
+</script>
+</body>
+</html>
